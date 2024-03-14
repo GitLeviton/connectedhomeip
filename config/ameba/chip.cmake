@@ -36,8 +36,8 @@ list(
 
 list(
     APPEND CHIP_CXXFLAGS
-
-    -DFD_SETSIZE=10
+#LEV-MOD
+    -DFD_SETSIZE=16
     -Wno-sign-compare
     -Wno-unused-function
     -Wno-unused-but-set-variable
