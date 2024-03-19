@@ -17,6 +17,8 @@
 
 #include <platform/internal/GenericDeviceInstanceInfoProvider.h>
 
+#include "platform/../../../../Leviton/Matter/include/Lev_Matter_Library_Interaction.h" // LEV-MOD
+
 namespace chip {
 namespace DeviceLayer {
 namespace Internal {
@@ -31,7 +33,8 @@ CHIP_ERROR GenericDeviceInstanceInfoProvider<ConfigClass>::GetVendorId(uint16_t 
 template <class ConfigClass>
 CHIP_ERROR GenericDeviceInstanceInfoProvider<ConfigClass>::GetProductId(uint16_t & productId)
 {
-    productId = static_cast<uint16_t>(CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_ID);
+    productId = Lev_Matter_Library_Interaction_Get_PID();    // LEV-MOD
+    //productId = static_cast<uint16_t>(CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_ID);
     return CHIP_NO_ERROR;
 }
 
@@ -46,8 +49,9 @@ CHIP_ERROR GenericDeviceInstanceInfoProvider<ConfigClass>::GetVendorName(char * 
 template <class ConfigClass>
 CHIP_ERROR GenericDeviceInstanceInfoProvider<ConfigClass>::GetProductName(char * buf, size_t bufSize)
 {
-    ReturnErrorCodeIf(bufSize < sizeof(CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME), CHIP_ERROR_BUFFER_TOO_SMALL);
-    strcpy(buf, CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME);
+    Lev_Matter_Library_Interaction_Get_Product_Name(buf); // LEV-MOD
+    //ReturnErrorCodeIf(bufSize < sizeof(CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME), CHIP_ERROR_BUFFER_TOO_SMALL);
+    //strcpy(buf, CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME);
 
     return CHIP_NO_ERROR;
 }

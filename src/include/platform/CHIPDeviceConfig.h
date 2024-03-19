@@ -174,7 +174,7 @@
  * Human readable vendor name for the organization responsible for producing the device.
  */
 #ifndef CHIP_DEVICE_CONFIG_DEVICE_VENDOR_NAME
-#define CHIP_DEVICE_CONFIG_DEVICE_VENDOR_NAME "TEST_VENDOR"
+#define CHIP_DEVICE_CONFIG_DEVICE_VENDOR_NAME "Leviton" // LEV-MOD
 #endif
 
 /**
@@ -188,7 +188,7 @@
  * (see src/credentials/examples/DeviceAttestationCredsExample.cpp).
  */
 #ifndef CHIP_DEVICE_CONFIG_DEVICE_VENDOR_ID
-#define CHIP_DEVICE_CONFIG_DEVICE_VENDOR_ID 0xFFF1
+#define CHIP_DEVICE_CONFIG_DEVICE_VENDOR_ID 0x109B  // LEV-MOD
 #endif
 
 /**
@@ -197,7 +197,7 @@
  * Human readable name of the device model.
  */
 #ifndef CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME
-#define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME "TEST_PRODUCT"
+#define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME "D26HD" // LEV-MOD
 #endif
 
 /**
@@ -211,7 +211,7 @@
  * (see src/credentials/examples/DeviceAttestationCredsExample.cpp)
  */
 #ifndef CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_ID
-#define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_ID 0x8001
+#define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_ID 0x1000 // LEV-MOD
 #endif
 
 /**
@@ -220,7 +220,7 @@
  * Human readable string identifying version of the product assigned by the device vendor.
  */
 #ifndef CHIP_DEVICE_CONFIG_DEFAULT_DEVICE_HARDWARE_VERSION_STRING
-#define CHIP_DEVICE_CONFIG_DEFAULT_DEVICE_HARDWARE_VERSION_STRING "TEST_VERSION"
+#define CHIP_DEVICE_CONFIG_DEFAULT_DEVICE_HARDWARE_VERSION_STRING "1.0" // LEV-MOD
 #endif
 
 /**
@@ -237,7 +237,7 @@
  * persistent storage (e.g. by a factory provisioning process).
  */
 #ifndef CHIP_DEVICE_CONFIG_DEFAULT_DEVICE_HARDWARE_VERSION
-#define CHIP_DEVICE_CONFIG_DEFAULT_DEVICE_HARDWARE_VERSION 0
+#define CHIP_DEVICE_CONFIG_DEFAULT_DEVICE_HARDWARE_VERSION 0    // LEV-MOD
 #endif
 
 /**
@@ -246,7 +246,7 @@
  * A string identifying the software version running on the device.
  */
 #ifndef CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION_STRING
-#define CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION_STRING "1.0"
+#define CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION_STRING "2.2.0"
 #endif
 
 /**

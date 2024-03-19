@@ -168,7 +168,7 @@ private:
 #if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
     void HandleC3CharRead(TBTCONFIG_CALLBACK_DATA * p_data);
 #endif
-    static CHIP_ERROR ble_svr_gap_msg_event(void * param, T_IO_MSG * p_gap_msg);
+    CHIP_ERROR ble_svr_gap_msg_event(void * param, T_IO_MSG * p_gap_msg);
     static CHIP_ERROR ble_svr_gap_event(void * param, int cb_type, void * p_cb_data);
     static CHIP_ERROR gatt_svr_chr_access(void * param, T_SERVER_ID service_id, TBTCONFIG_CALLBACK_DATA * p_data);
     static int ble_callback_dispatcher(void * param, void * p_cb_data, int type, T_CHIP_BLEMGR_CALLBACK_TYPE callback_type);
