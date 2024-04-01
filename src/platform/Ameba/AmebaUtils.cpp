@@ -20,6 +20,8 @@
  *          General utility methods for the Ameba platform.
  */
 /* this file behaves like a config.h, comes first */
+#include "Lev_Matter_Port.h" // LEV-MOD
+#include "Lev_Wifi_Mesh.h" // LEV-MOD
 #include <platform/internal/CHIPDeviceLayerInternal.h>
 
 #include <chip_porting.h>
@@ -144,11 +146,12 @@ exit:
 
 CHIP_ERROR AmebaUtils::GetWiFiConfig(rtw_wifi_config_t * config)
 {
-    CHIP_ERROR err;
+    CHIP_ERROR err        = CHIP_NO_ERROR;
     size_t ssidLen        = 0;
     size_t credentialsLen = 0;
 
-    /* Retrieve Wi-Fi Configurations from Storage */
+/*
+    //Retrieve Wi-Fi Configurations from Storage 
     err = PersistedStorage::KeyValueStoreMgr().Get(kWiFiSSIDKeyName, config->ssid, sizeof(config->ssid), &ssidLen);
     SuccessOrExit(err);
 
@@ -158,6 +161,18 @@ CHIP_ERROR AmebaUtils::GetWiFiConfig(rtw_wifi_config_t * config)
 
     config->ssid_len     = strlen((const char *) config->ssid);
     config->password_len = strlen((const char *) config->password);
+    */
+   
+    lev_wifi_configuration_t Configuration;
+    lev_wifi_load_configuration(&Configuration);
+    memcpy(config->ssid, Configuration.ssid, 32);
+    config->ssid_len = Configuration.ssidLen;
+    memcpy(config->password, Configuration.passphrase,128+1);
+    config->password_len = Configuration.passphraseLen;
+    // The next properties may be invalid if read from a v1.X.X device that was upgraded to v2.X.X, but dont think it matters
+    config->boot_mode = Configuration.boot_mode;
+    config->security_type = Configuration.security_type;
+    config->channel = Configuration.channel; 
 
 exit:
     return err;
@@ -174,6 +189,13 @@ CHIP_ERROR AmebaUtils::ClearWiFiConfig()
     SuccessOrExit(err);
 
 exit:
+    return err;
+    */
+
+   CHIP_ERROR err = CHIP_NO_ERROR;
+    rtw_wifi_config_t wifiConfig;
+    memset(&wifiConfig, 0, sizeof(wifiConfig));
+    err = SetWiFiConfig(&wifiConfig);
     return err;
 }
 
@@ -196,8 +218,8 @@ CHIP_ERROR AmebaUtils::WiFiConnectProvisionedNetwork(void)
     memset(config, 0, sizeof(rtw_wifi_config_t));
     GetWiFiConfig(config);
     ChipLogProgress(DeviceLayer, "Connecting to AP : [%s]", (char *) config->ssid);
-    int32_t error  = matter_wifi_connect((char *) config->ssid, RTW_SECURITY_WPA_WPA2_MIXED, (char *) config->password,
-                                         strlen((const char *) config->ssid), strlen((const char *) config->password), 0, nullptr);
+    //int32_t error  = matter_wifi_connect((char *) config->ssid, RTW_SECURITY_WPA_WPA2_MIXED, (char *) config->password,strlen((const char *) config->ssid), strlen((const char *) config->password), 0, nullptr);
+    int32_t error = Lev_Wifi_Connect_Mesh((char *) config->ssid, (strlen((const char *) config->password) > 0 ? RTW_SECURITY_WPA_WPA2_MIXED : RTW_SECURITY_OPEN), (char *) config->password,strlen((const char *) config->ssid), strlen((const char *) config->password)); // LEV-MOD
     CHIP_ERROR err = MapError(error, AmebaErrorType::kWiFiError);
 
     vPortFree(config);
