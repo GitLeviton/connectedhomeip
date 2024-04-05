@@ -33,6 +33,11 @@
 #include <app/clusters/level-control/level-control.h>
 #endif // EMBER_AF_PLUGIN_LEVEL_CONTROL
 
+#include "Lev_Matter_Config.h"  // LEV-MOD
+#ifdef USE_APP_LEVEL_PROCESSING
+    #include "Lev_Matter_Level_Processing.h"    // LEV-MOD
+#endif
+
 #ifdef EMBER_AF_PLUGIN_MODE_BASE
 // nogncheck because the gn dependency checker does not understand
 // conditional includes, so will fail in an application that has an On/Off
@@ -494,6 +499,9 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, chip::Comman
 
             Attributes::GlobalSceneControl::Set(endpoint, true);
         }
+#ifdef USE_APP_LEVEL_PROCESSING // LEV-MOD
+        status = (EmberAfStatus) Lev_Matter_Parse_On_Off_Command(LEV_LEVEL_COMMAND_ON);
+#else
 
         // write the new on/off value
         status = Attributes::OnOff::Set(endpoint, newValue);
@@ -510,6 +518,7 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, chip::Comman
         {
             emberAfOnOffClusterLevelControlEffectCallback(endpoint, newValue);
         }
+#endif
 #endif
 #ifdef EMBER_AF_PLUGIN_MODE_SELECT
         // If OnMode is not a null value, then change the current mode to it.
@@ -531,6 +540,14 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, chip::Comman
     }
     else // Set Off
     {
+#ifdef USE_APP_LEVEL_PROCESSING // LEV-MOD
+		if (SupportsLightingApplications(endpoint))
+        {
+            emberAfOnOffClusterPrintln("Off Command - OnTime :  0");
+            Attributes::OnTime::Set(endpoint, 0); // Reset onTime
+        }
+        status = (EmberAfStatus) Lev_Matter_Parse_On_Off_Command(LEV_LEVEL_COMMAND_OFF);
+#else
 #ifdef EMBER_AF_PLUGIN_LEVEL_CONTROL
         // If initiatedByLevelChange is false, then we assume that the level change
         // ZCL stuff has not happened and we do it here
@@ -555,6 +572,7 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, chip::Comman
                 Attributes::OnTime::Set(endpoint, 0); // Reset onTime
             }
         }
+#endif		
     }
 
 #ifdef EMBER_AF_PLUGIN_SCENES

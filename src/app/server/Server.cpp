@@ -51,6 +51,7 @@
 #include <system/SystemPacketBuffer.h>
 #include <system/TLVPacketBufferBackingStore.h>
 #include <transport/SessionManager.h>
+#include "Lev_Matter_Port.h"    // LEV-MOD
 
 #if defined(CHIP_SUPPORT_ENABLE_STORAGE_API_AUDIT) || defined(CHIP_SUPPORT_ENABLE_STORAGE_LOAD_TEST_AUDIT)
 #include <lib/support/PersistentStorageAudit.h>
@@ -276,6 +277,7 @@ CHIP_ERROR Server::Init(const ServerInitParams & initParams)
     app::DnssdServer::Instance().SetUnsecuredPort(mUserDirectedCommissioningPort);
     app::DnssdServer::Instance().SetInterfaceId(mInterfaceId);
 
+/* LEV-MOD
     if (GetFabricTable().FabricCount() != 0)
     {
         // The device is already commissioned, proactively disable BLE advertisement.
@@ -287,9 +289,14 @@ CHIP_ERROR Server::Init(const ServerInitParams & initParams)
     else
     {
 #if CHIP_DEVICE_CONFIG_ENABLE_PAIRING_AUTOSTART
-        SuccessOrExit(err = mCommissioningWindowManager.OpenBasicCommissioningWindow());
+        GetFabricTable().DeleteAllFabrics();
+        if (lev_wifi_valid_wifi_info() == false)    // LEV-MOD 
+        {
+            SuccessOrExit(err = mCommissioningWindowManager.OpenBasicCommissioningWindow());
+        }
 #endif
     }
+	*/
 
     // TODO @bzbarsky-apple @cecille Move to examples
     // ESP32 and Mbed OS examples have a custom logic for enabling DNS-SD

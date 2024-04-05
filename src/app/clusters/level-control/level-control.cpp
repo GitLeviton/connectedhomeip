@@ -48,6 +48,11 @@
 
 #include <assert.h>
 
+#include "Lev_Matter_Config.h"  // LEV-MOD
+#ifdef USE_APP_LEVEL_PROCESSING
+    #include "Lev_Matter_Level_Processing.h"    // LEV-MOD
+#endif
+
 using namespace chip;
 using namespace chip::app::Clusters;
 using namespace chip::app::Clusters::LevelControl;
@@ -268,6 +273,8 @@ static void reallyUpdateCoupledColorTemp(EndpointId endpoint);
 #define updateCoupledColorTemp(endpoint)
 #endif // IGNORE_LEVEL_CONTROL_CLUSTER_OPTIONS && EMBER_AF_PLUGIN_COLOR_CONTROL_SERVER_TEMP
 
+bool Lev_Active_Command = false; // LEV-MOD
+
 void emberAfLevelControlClusterServerTickCallback(EndpointId endpoint);
 
 static void timerCallback(System::Layer *, void * callbackContext)
@@ -422,6 +429,7 @@ void emberAfLevelControlClusterServerTickCallback(EndpointId endpoint)
     // Are we at the requested level?
     if (currentLevel.Value() == state->moveToLevel)
     {
+    	Lev_Active_Command = false; // LEV-MOD
         if (state->commandId == Commands::MoveToLevelWithOnOff::Id || state->commandId == Commands::MoveWithOnOff::Id ||
             state->commandId == Commands::StepWithOnOff::Id)
         {
@@ -779,6 +787,25 @@ static Status moveToLevelHandler(EndpointId endpoint, CommandId commandId, uint8
                                  chip::Optional<BitMask<LevelControlOptions>> optionsMask,
                                  chip::Optional<BitMask<LevelControlOptions>> optionsOverride, uint16_t storedLevel)
 {
+#ifdef USE_APP_LEVEL_PROCESSING // LEV-MOD
+    EmberAfStatus status;
+    if (!shouldExecuteIfOff(endpoint, commandId, optionsMask, optionsOverride))
+    {
+        return EMBER_ZCL_STATUS_SUCCESS;
+    }
+
+	uint16_t Tx_Time;
+
+	if (transitionTimeDs.IsNull())
+		Tx_Time = 0xFFFF;
+	else
+		Tx_Time = transitionTimeDs.Value();
+
+    if (commandId == Commands::MoveToLevel::Id)
+        status = (EmberAfStatus) Lev_Matter_Parse_Move_To_Level_Command(LEV_LEVEL_COMMAND_MOVE_TO_LEVEL,level, Tx_Time,optionsMask, optionsOverride,storedLevel);
+    else    
+        status = (EmberAfStatus) Lev_Matter_Parse_Move_To_Level_Command(LEV_LEVEL_COMMAND_MOVE_TO_LEVEL_WITH_ON_OFF,level, Tx_Time,optionsMask, optionsOverride,storedLevel);
+#else
     EmberAfLevelControlState * state = getState(endpoint);
     app::DataModel::Nullable<uint8_t> currentLevel;
     uint8_t actualStepSize;
@@ -929,7 +956,7 @@ static Status moveToLevelHandler(EndpointId endpoint, CommandId commandId, uint8
         OnOff::Attributes::GlobalSceneControl::Set(endpoint, true);
     }
 #endif // EMBER_AF_PLUGIN_ON_OFF
-
+#endif	// LEV-MOD
     return Status::Success;
 }
 
@@ -937,6 +964,26 @@ static void moveHandler(app::CommandHandler * commandObj, const app::ConcreteCom
                         app::DataModel::Nullable<uint8_t> rate, chip::Optional<BitMask<LevelControlOptions>> optionsMask,
                         chip::Optional<BitMask<LevelControlOptions>> optionsOverride)
 {
+#ifdef USE_APP_LEVEL_PROCESSING // LEV-MOD
+    EmberAfStatus status;
+
+    if (rate.Value() == 0 || !shouldExecuteIfOff(LEV_LIGHT_ENDPOINT, commandId, optionsMask, optionsOverride))
+    {
+        status = EMBER_ZCL_STATUS_SUCCESS;
+        goto send_default_response;
+    }
+
+    if (moveMode > EMBER_ZCL_MOVE_MODE_DOWN)
+    {
+        status = EMBER_ZCL_STATUS_INVALID_FIELD;
+        goto send_default_response;
+    }
+
+    if (commandId == Commands::Move::Id)
+        status = (EmberAfStatus) Lev_Matter_Parse_Move_Command(LEV_LEVEL_COMMAND_MOVE,moveMode,rate.Value(),optionsMask,optionsOverride);
+    else
+        status = (EmberAfStatus) Lev_Matter_Parse_Move_Command(LEV_LEVEL_COMMAND_MOVE_WITH_ON_OFF,moveMode,rate.Value(),optionsMask,optionsOverride);
+#else 
     EndpointId endpoint = commandPath.mEndpointId;
     CommandId commandId = commandPath.mCommandId;
 
@@ -1058,7 +1105,7 @@ static void moveHandler(app::CommandHandler * commandObj, const app::ConcreteCom
     // The setup was successful, so mark the new state as active and return.
     scheduleTimerCallbackMs(endpoint, computeCallbackWaitTimeMs(state->callbackSchedule, state->eventDurationMs));
     status = Status::Success;
-
+#endif // LEV-MOD
 send_default_response:
     commandObj->AddStatus(commandPath, status);
 }
@@ -1068,6 +1115,26 @@ static void stepHandler(app::CommandHandler * commandObj, const app::ConcreteCom
                         chip::Optional<BitMask<LevelControlOptions>> optionsMask,
                         chip::Optional<BitMask<LevelControlOptions>> optionsOverride)
 {
+#ifdef USE_APP_LEVEL_PROCESSING // LEV-MOD
+    EmberAfStatus status;
+
+    if (!shouldExecuteIfOff(LEV_LIGHT_ENDPOINT, commandId, optionsMask, optionsOverride))
+    {
+        status = EMBER_ZCL_STATUS_SUCCESS;
+        goto send_default_response;
+    }
+
+    if (stepMode > EMBER_ZCL_STEP_MODE_DOWN)
+    {
+        status = EMBER_ZCL_STATUS_INVALID_FIELD;
+        goto send_default_response;
+    }
+
+    if (commandId == Commands::Step::Id)    
+        status = (EmberAfStatus) Lev_Matter_Parse_Step_Command(LEV_LEVEL_COMMAND_STEP,stepMode,stepSize,transitionTimeDs.Value(),optionsMask,optionsOverride);
+    else
+        status = (EmberAfStatus) Lev_Matter_Parse_Step_Command(LEV_LEVEL_COMMAND_STEP_WITH_ON_OFF,stepMode,stepSize,transitionTimeDs.Value(),optionsMask,optionsOverride);
+#else 
     EndpointId endpoint = commandPath.mEndpointId;
     CommandId commandId = commandPath.mCommandId;
 
@@ -1198,7 +1265,7 @@ static void stepHandler(app::CommandHandler * commandObj, const app::ConcreteCom
     // The setup was successful, so mark the new state as active and return.
     scheduleTimerCallbackMs(endpoint, computeCallbackWaitTimeMs(state->callbackSchedule, state->eventDurationMs));
     status = Status::Success;
-
+#endif // LEV-MOD
 send_default_response:
     commandObj->AddStatus(commandPath, status);
 }
@@ -1207,6 +1274,17 @@ static void stopHandler(app::CommandHandler * commandObj, const app::ConcreteCom
                         chip::Optional<BitMask<LevelControlOptions>> optionsMask,
                         chip::Optional<BitMask<LevelControlOptions>> optionsOverride)
 {
+#ifdef USE_APP_LEVEL_PROCESSING // LEV-MOD
+    EmberAfStatus status;
+
+    if (!shouldExecuteIfOff(LEV_LIGHT_ENDPOINT, commandId, optionsMask, optionsOverride))
+    {
+        status = EMBER_ZCL_STATUS_SUCCESS;
+        goto send_default_response;
+    }
+
+    status = (EmberAfStatus) Lev_Matter_Parse_Stop_Command(LEV_LEVEL_COMMAND_STOP, optionsMask,optionsOverride);
+#else 
     EndpointId endpoint = commandPath.mEndpointId;
     CommandId commandId = commandPath.mCommandId;
 
@@ -1229,7 +1307,7 @@ static void stopHandler(app::CommandHandler * commandObj, const app::ConcreteCom
     cancelEndpointTimerCallback(endpoint);
     writeRemainingTime(endpoint, 0);
     status = Status::Success;
-
+#endif // LEV-MOD
 send_default_response:
     commandObj->AddStatus(commandPath, status);
 }
@@ -1387,7 +1465,8 @@ void emberAfLevelControlClusterServerInitCallback(EndpointId endpoint)
 
     app::DataModel::Nullable<uint8_t> currentLevel;
     EmberAfStatus status = Attributes::CurrentLevel::Get(endpoint, currentLevel);
-    if (status == EMBER_ZCL_STATUS_SUCCESS)
+    if (0)  // LEV-MOD do this in app code
+    //if (status == EMBER_ZCL_STATUS_SUCCESS)
     {
 #ifndef IGNORE_LEVEL_CONTROL_CLUSTER_START_UP_CURRENT_LEVEL
         // StartUp behavior relies StartUpCurrentLevel attributes being Non Volatile.
@@ -1486,3 +1565,98 @@ bool LevelControlHasFeature(EndpointId endpoint, Feature feature)
 }
 
 void MatterLevelControlPluginServerInitCallback() {}
+
+#include "Lev_Matter_Config.h" // LEV-MOD
+// LEV-MOD
+Lev_Dimming_State_t Lev_Get_Dimming_State (void)
+{
+    Lev_Dimming_State_t Lev_Dimming_State;
+    EmberAfLevelControlState * state = getState(LEV_LIGHT_ENDPOINT);
+
+    Lev_Dimming_State.commandId = state->commandId;
+    Lev_Dimming_State.increasing = state->increasing;
+    Lev_Dimming_State.moveToLevel  = state->moveToLevel;
+    Lev_Dimming_State.onLevel  = state->onLevel;
+    Lev_Dimming_State.minLevel  = state->minLevel;
+    Lev_Dimming_State.maxLevel  = state->maxLevel;
+    Lev_Dimming_State.Active_Command = Lev_Active_Command;
+
+    return Lev_Dimming_State;
+}
+
+// LEV-MOD
+void Lev_moveToLevelHandler(EndpointId endpoint, CommandId commandId, uint8_t level, uint16_t Tx_Time,uint8_t optionMask, uint8_t optionOverride, uint16_t storedLevel)
+{
+    app::DataModel::Nullable<uint8_t> currentLevel;
+    uint8_t Min_Level;
+
+    // Dont want to auto turn off if setting to the min level, so only do MovetoLevel if not already at min
+    Attributes::MinLevel::Get(endpoint, &Min_Level);
+    Attributes::CurrentLevel::Get(endpoint, currentLevel);
+    if (currentLevel.Value() > Min_Level)
+        commandId = LevelControl::Commands::MoveToLevel::Id;
+    else
+        commandId = LevelControl::Commands::MoveToLevelWithOnOff::Id;
+
+    app::DataModel::Nullable<uint16_t> transitionTimeDs;
+    transitionTimeDs.SetNonNull(Tx_Time);
+    moveToLevelHandler(endpoint,commandId,level,transitionTimeDs,optionMask,optionOverride,storedLevel);
+}
+
+// LEV-MOD
+void Lev_moveHandler(CommandId commandId, uint8_t moveMode, uint8_t rate, uint8_t optionMask, uint8_t optionOverride)
+{
+
+    EndpointId endpoint              = LEV_LIGHT_ENDPOINT;
+    EmberAfLevelControlState * state = getState(endpoint);
+    app::DataModel::Nullable<uint8_t> currentLevel;
+    uint8_t difference;
+    deactivate(endpoint);   // Cancel any currently active command before fiddling with the state.
+    Attributes::CurrentLevel::Get(endpoint, currentLevel);
+
+    // Move commands cause the device to move from its current level to either
+    // the maximum or minimum level at the specified rate.
+    switch (moveMode)
+    {
+    case EMBER_ZCL_MOVE_MODE_UP:
+        state->increasing  = true;
+        state->moveToLevel = state->maxLevel;
+        difference         = static_cast<uint8_t>(state->maxLevel - currentLevel.Value());
+        break;
+    case EMBER_ZCL_MOVE_MODE_DOWN:
+        state->increasing  = false;
+        state->moveToLevel = state->minLevel;
+        difference         = static_cast<uint8_t>(currentLevel.Value() - state->minLevel);
+        break;
+    default:
+        return;
+    }
+
+    state->commandId = commandId;
+    state->eventDurationMs = MILLISECOND_TICKS_PER_SECOND / rate;
+    state->transitionTimeMs = difference * state->eventDurationMs;
+    state->elapsedTimeMs    = 0;
+    state->onLevel = false;   // OnLevel is not used for Move commands.
+    state->storedLevel = INVALID_STORED_LEVEL;  // storedLevel is not used for Move commands.
+    schedule(endpoint, state->eventDurationMs); // The setup was successful, so mark the new state as active and return.
+
+}
+
+// LEV-MOD
+void Lev_stopHandler(CommandId commandId, uint8_t optionMask, uint8_t optionOverride)
+{
+    EndpointId endpoint              = LEV_LIGHT_ENDPOINT;
+    EmberAfLevelControlState * state = getState(endpoint);
+    //EmberAfStatus status;
+
+    if (state == nullptr)
+        return;
+
+    if (!shouldExecuteIfOff(endpoint, commandId, optionMask, optionOverride))
+        return;
+
+    // Cancel any currently active command.
+    deactivate(endpoint);
+    writeRemainingTime(endpoint, 0);
+}
+

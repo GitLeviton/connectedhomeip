@@ -25,6 +25,7 @@
 #include <platform/CHIPDeviceLayer.h>
 #include <platform/CommissionableDataProvider.h>
 #include <platform/DeviceControlServer.h>
+#include "Lev_Matter_Port.h"    // LEV-MOD
 
 using namespace chip::app::Clusters;
 using namespace chip::System::Clock;
@@ -129,6 +130,10 @@ void CommissioningWindowManager::HandleFailedAttempt(CHIP_ERROR err)
 {
     mFailedCommissioningAttempts++;
     ChipLogError(AppServer, "Commissioning failed (attempt %d): %" CHIP_ERROR_FORMAT, mFailedCommissioningAttempts, err.Format());
+	if (err.Format() == 0x32)	// Timeout error  LEV-MOD
+	{
+		Lev_Report_Matter_Status(MATTER_ENROLL_ERROR_TIMEOUT); // LEV-MOD
+	}
 #if CONFIG_NETWORK_LAYER_BLE
     mServer->GetBleLayerObject()->CloseAllBleConnections();
 #endif
@@ -228,6 +233,8 @@ CHIP_ERROR CommissioningWindowManager::OpenCommissioningWindow(Seconds16 commiss
     ReturnErrorOnFailure(DeviceLayer::SystemLayer().StartTimer(commissioningTimeout, HandleCommissioningWindowTimeout, this));
 
     mCommissioningTimeoutTimerArmed = true;
+
+	Lev_Matter_Start_Commissioning_Window();	// LEV-MOD
 
     return AdvertiseAndListenForPASE();
 }
@@ -365,6 +372,7 @@ void CommissioningWindowManager::CloseCommissioningWindow()
 #endif
         ChipLogProgress(AppServer, "Closing pairing window");
         Cleanup();
+		Lev_Matter_Stop_Commissioning_Window();	// LEV-MOD
     }
 }
 
