@@ -140,6 +140,18 @@ CHIP_ERROR AmebaUtils::SetWiFiConfig(rtw_wifi_config_t * config)
     err = PersistedStorage::KeyValueStoreMgr().Put(kWiFiCredentialsKeyName, config->password, sizeof(config->password));
     SuccessOrExit(err);
 
+    lev_wifi_configuration_t Configuration;
+    
+    memcpy(Configuration.ssid, config->ssid, 32);
+    Configuration.ssidLen = config->ssid_len;
+    memcpy(Configuration.passphrase, config->password,128+1);
+    Configuration.passphraseLen = config->password_len;
+    // The next properties may be invalid if read from a v1.X.X device that was upgraded to v2.X.X, but dont think it matters
+    Configuration.boot_mode = config->boot_mode;
+    Configuration.security_type = config->security_type;
+    Configuration.channel = config->channel;
+    lev_wifi_save_configuration(&Configuration);
+
 exit:
     return err;
 }

@@ -87,9 +87,9 @@ extern uint8_t attributeData[]; // main storage bucket for all attributes
 extern uint8_t attributeDefaults[]; // storage bucked for > 2b default values
 
 void emAfCallInits(void);
-
-#define emberAfClusterIsClient(cluster) ((bool) (((cluster)->mask & CLUSTER_MASK_CLIENT) != 0))
-#define emberAfClusterIsServer(cluster) ((bool) (((cluster)->mask & CLUSTER_MASK_SERVER) != 0))
+#include "Lev_Matter.h" // LEV-MOD
+#define emberAfClusterIsClient(cluster) ((bool) (((cluster)->mask & CLUSTER_MASK_CLIENT) != 0) && !(Lev_Matter::IsClientClusterDisabled(cluster->clusterId))) // LEV-MOD
+#define emberAfClusterIsServer(cluster) ((bool) (((cluster)->mask & CLUSTER_MASK_SERVER) != 0)) 
 
 // Initial configuration
 void emberAfEndpointConfigure(void);

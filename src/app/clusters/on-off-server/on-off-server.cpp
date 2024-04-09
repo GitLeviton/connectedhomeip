@@ -543,7 +543,7 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, chip::Comman
 #ifdef USE_APP_LEVEL_PROCESSING // LEV-MOD
 		if (SupportsLightingApplications(endpoint))
         {
-            emberAfOnOffClusterPrintln("Off Command - OnTime :  0");
+            //emberAfOnOffClusterPrintln("Off Command - OnTime :  0");
             Attributes::OnTime::Set(endpoint, 0); // Reset onTime
         }
         status = (EmberAfStatus) Lev_Matter_Parse_On_Off_Command(LEV_LEVEL_COMMAND_OFF);
